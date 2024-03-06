@@ -38,7 +38,6 @@
             this.txtDbConnectionStr = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.btnConnect = new System.Windows.Forms.Button();
-            this.clbMonitorTypes = new System.Windows.Forms.CheckedListBox();
             this.label4 = new System.Windows.Forms.Label();
             this.numCheckInterval = new System.Windows.Forms.NumericUpDown();
             this.label5 = new System.Windows.Forms.Label();
@@ -49,6 +48,8 @@
             this.label6 = new System.Windows.Forms.Label();
             this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.btnTestLine = new System.Windows.Forms.Button();
+            this.clbMonitorTypes = new System.Windows.Forms.CheckedListBox();
+            this.btnTestMonitor = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.numCheckInterval)).BeginInit();
             this.SuspendLayout();
             // 
@@ -117,18 +118,9 @@
             this.btnConnect.UseVisualStyleBackColor = true;
             this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
             // 
-            // clbMonitorTypes
-            // 
-            this.clbMonitorTypes.Enabled = false;
-            this.clbMonitorTypes.FormattingEnabled = true;
-            this.clbMonitorTypes.Location = new System.Drawing.Point(325, 314);
-            this.clbMonitorTypes.Name = "clbMonitorTypes";
-            this.clbMonitorTypes.Size = new System.Drawing.Size(374, 52);
-            this.clbMonitorTypes.TabIndex = 7;
-            // 
             // label4
             // 
-            this.label4.Location = new System.Drawing.Point(24, 407);
+            this.label4.Location = new System.Drawing.Point(24, 560);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(224, 50);
             this.label4.TabIndex = 8;
@@ -136,7 +128,7 @@
             // 
             // numCheckInterval
             // 
-            this.numCheckInterval.Location = new System.Drawing.Point(325, 407);
+            this.numCheckInterval.Location = new System.Drawing.Point(325, 560);
             this.numCheckInterval.Minimum = new decimal(new int[] {
             1,
             0,
@@ -153,7 +145,7 @@
             // 
             // label5
             // 
-            this.label5.Location = new System.Drawing.Point(24, 500);
+            this.label5.Location = new System.Drawing.Point(24, 653);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(299, 50);
             this.label5.TabIndex = 10;
@@ -161,7 +153,7 @@
             // 
             // textLineToken
             // 
-            this.textLineToken.Location = new System.Drawing.Point(325, 500);
+            this.textLineToken.Location = new System.Drawing.Point(325, 653);
             this.textLineToken.Name = "textLineToken";
             this.textLineToken.Size = new System.Drawing.Size(933, 51);
             this.textLineToken.TabIndex = 11;
@@ -170,7 +162,7 @@
             // btnApply
             // 
             this.btnApply.Enabled = false;
-            this.btnApply.Location = new System.Drawing.Point(325, 605);
+            this.btnApply.Location = new System.Drawing.Point(325, 710);
             this.btnApply.Name = "btnApply";
             this.btnApply.Size = new System.Drawing.Size(178, 69);
             this.btnApply.TabIndex = 12;
@@ -180,7 +172,7 @@
             // 
             // btnStop
             // 
-            this.btnStop.Location = new System.Drawing.Point(545, 605);
+            this.btnStop.Location = new System.Drawing.Point(545, 710);
             this.btnStop.Name = "btnStop";
             this.btnStop.Size = new System.Drawing.Size(178, 69);
             this.btnStop.TabIndex = 13;
@@ -212,7 +204,7 @@
             // btnTestLine
             // 
             this.btnTestLine.Enabled = false;
-            this.btnTestLine.Location = new System.Drawing.Point(1290, 501);
+            this.btnTestLine.Location = new System.Drawing.Point(1290, 654);
             this.btnTestLine.Name = "btnTestLine";
             this.btnTestLine.Size = new System.Drawing.Size(130, 50);
             this.btnTestLine.TabIndex = 16;
@@ -220,11 +212,31 @@
             this.btnTestLine.UseVisualStyleBackColor = true;
             this.btnTestLine.Click += new System.EventHandler(this.btnTestLine_Click);
             // 
+            // clbMonitorTypes
+            // 
+            this.clbMonitorTypes.Enabled = false;
+            this.clbMonitorTypes.FormattingEnabled = true;
+            this.clbMonitorTypes.Location = new System.Drawing.Point(325, 314);
+            this.clbMonitorTypes.Name = "clbMonitorTypes";
+            this.clbMonitorTypes.Size = new System.Drawing.Size(374, 244);
+            this.clbMonitorTypes.TabIndex = 7;
+            // 
+            // btnTestMonitor
+            // 
+            this.btnTestMonitor.Location = new System.Drawing.Point(771, 710);
+            this.btnTestMonitor.Name = "btnTestMonitor";
+            this.btnTestMonitor.Size = new System.Drawing.Size(167, 68);
+            this.btnTestMonitor.TabIndex = 17;
+            this.btnTestMonitor.Text = "測試監測";
+            this.btnTestMonitor.UseVisualStyleBackColor = true;
+            this.btnTestMonitor.Click += new System.EventHandler(this.btnTestMonitor_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(20F, 42F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1440, 712);
+            this.ClientSize = new System.Drawing.Size(1440, 815);
+            this.Controls.Add(this.btnTestMonitor);
             this.Controls.Add(this.btnTestLine);
             this.Controls.Add(this.textDatabase);
             this.Controls.Add(this.label6);
@@ -264,7 +276,6 @@
         private System.Windows.Forms.TextBox txtDbConnectionStr;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Button btnConnect;
-        private System.Windows.Forms.CheckedListBox clbMonitorTypes;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.NumericUpDown numCheckInterval;
         private System.Windows.Forms.Label label5;
@@ -275,5 +286,7 @@
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.NotifyIcon notifyIcon;
         private System.Windows.Forms.Button btnTestLine;
+        private System.Windows.Forms.CheckedListBox clbMonitorTypes;
+        private System.Windows.Forms.Button btnTestMonitor;
     }
 }

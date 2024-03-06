@@ -20,8 +20,11 @@ namespace DbWatchdog
                 .MinimumLevel.Information()
                 .Enrich.WithExceptionDetails()
                 .WriteTo.File(".\\log\\DbWatchdog.log", rollingInterval: RollingInterval.Day)
+                .WriteTo.Console()  
                 .CreateLogger();
-            Log.Information($"DbWatchdog start. {ThisAssembly.Git.Branch} v{ThisAssembly.Git.BaseTag}-{ThisAssembly.Git.Commits} ({ThisAssembly.Git.Commit})");
+            
+            //Log.Information($"DbWatchdog start. {ThisAssembly.Git.Branch} v{ThisAssembly.Git.BaseTag}-{ThisAssembly.Git.Commits} ({ThisAssembly.Git.Commit})");
+            Log.Information("DbWatchdog start.");
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());

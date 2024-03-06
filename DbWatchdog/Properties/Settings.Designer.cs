@@ -58,10 +58,9 @@ namespace DbWatchdog.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string MonitorTypes {
+        public global::System.Collections.Specialized.StringCollection MonitorTypes {
             get {
-                return ((string)(this["MonitorTypes"]));
+                return ((global::System.Collections.Specialized.StringCollection)(this["MonitorTypes"]));
             }
             set {
                 this["MonitorTypes"] = value;

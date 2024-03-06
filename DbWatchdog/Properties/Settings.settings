@@ -12,7 +12,7 @@
     <Setting Name="Database" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="MonitorTypes" Type="System.String" Scope="User">
+    <Setting Name="MonitorTypes" Type="System.Collections.Specialized.StringCollection" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="CheckInterval" Type="System.Int32" Scope="User">
