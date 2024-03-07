@@ -9,7 +9,13 @@ using Serilog;
 
 namespace DbWatchdog.Model
 {
-    public record MonitorType
+    public interface IMonitorType
+    {
+        string Id { get; set; }
+        string Desp { get; set; }
+    }
+
+    public class MonitorType : IMonitorType
     {
         public string Id { get; set;}
         // ReSharper disable once IdentifierTypo
@@ -23,7 +29,7 @@ namespace DbWatchdog.Model
 
     internal interface IDb
     {
-        Task<IEnumerable<MonitorType>> GetMonitorTypes();
+        Task<IEnumerable<IMonitorType>> GetMonitorTypes();
         Task<SqlDb.DataRecord> GetLatestRecord(string table, string monitor, List<string> mtList);
     }
 
@@ -36,7 +42,7 @@ namespace DbWatchdog.Model
             this._connectionString = connectionString;
         }
 
-        public async Task<IEnumerable<MonitorType>> GetMonitorTypes()
+        public async Task<IEnumerable<IMonitorType>> GetMonitorTypes()
         { 
             using var connection = new SqlConnection(_connectionString);
             return await connection.QueryAsync<MonitorType>("SELECT * FROM [dbo].[monitorType] Where [measuringBy] is not null");

@@ -74,7 +74,8 @@ namespace DbWatchdog
         {
             try
             {
-                var db = new SqlDb(this.txtDbConnectionStr.Text);
+                IDb db = btnMongo.Checked? new MongoDb(this.txtDbConnectionStr.Text, this.textDatabase.Text):
+                    new SqlDb(this.txtDbConnectionStr.Text);
                 var enumMonitorTypes = await db.GetMonitorTypes();
                 var monitorTypes = enumMonitorTypes.ToList();
                 this.btnApply.Enabled = true;
@@ -90,7 +91,7 @@ namespace DbWatchdog
                 // select the monitor types that were previously selected
                 for (int i = 0; i < this.clbMonitorTypes.Items.Count; i++)
                 {
-                    var monitorType = (MonitorType)this.clbMonitorTypes.Items[i];
+                    var monitorType = (IMonitorType)this.clbMonitorTypes.Items[i];
                     if (filteredSelectedMonitorTypes.Contains(monitorType.Id))
                     {
                         this.clbMonitorTypes.SetItemChecked(i, true);
