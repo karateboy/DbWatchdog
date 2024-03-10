@@ -15,6 +15,12 @@ namespace DbWatchdog.Model
         string Desp { get; set; }
     }
 
+    public interface IMonitor
+    {
+        string Id { get; set; }
+        string Name { get; set; }
+    }
+
     public class MonitorType : IMonitorType
     {
         public string Id { get; set;}
@@ -27,10 +33,22 @@ namespace DbWatchdog.Model
         }
     }
 
+    public class Monitor : IMonitor
+    {
+        public string Id { get; set;}
+        public string Name { get; set;}
+
+        public override string ToString()
+        {
+            return Name;
+        }
+    }
+
     internal interface IDb
     {
+        Task<IEnumerable<IMonitor>> GetMonitors();
         Task<IEnumerable<IMonitorType>> GetMonitorTypes();
-        Task<SqlDb.DataRecord> GetLatestRecord(string table, string monitor, List<string> mtList);
+        Task<SqlDb.IDataRecord> GetLatestRecord(string table, string monitor, List<string> mtList);
     }
 
     class SqlDb : IDb
@@ -42,20 +60,33 @@ namespace DbWatchdog.Model
             this._connectionString = connectionString;
         }
 
+        public async Task<IEnumerable<IMonitor>> GetMonitors()
+        {
+            using var connection = new SqlConnection(_connectionString);
+            return await connection.QueryAsync<Monitor>("SELECT * FROM [dbo].[monitor]");
+        }
+
         public async Task<IEnumerable<IMonitorType>> GetMonitorTypes()
         { 
             using var connection = new SqlConnection(_connectionString);
             return await connection.QueryAsync<MonitorType>("SELECT * FROM [dbo].[monitorType] Where [measuringBy] is not null");
         }
 
-        public class DataRecord
+        public interface IDataRecord
+        {
+            string Monitor { get; set; }
+            DateTime Time { get; set; }
+            Dictionary<string, double> Values { get; set; }
+        }
+
+        public class DataRecord : IDataRecord
         {
             public string Monitor { get; set;}
             public DateTime Time { get; set;}
             public Dictionary<string, double> Values { get; set;}
         }
 
-        public async Task<DataRecord> GetLatestRecord(string table, string monitor, List<string> mtList)
+        public async Task<IDataRecord> GetLatestRecord(string table, string monitor, List<string> mtList)
         {
             using var connection = new SqlConnection(_connectionString);
             var sql =

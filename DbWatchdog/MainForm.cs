@@ -1,26 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
+using System.Data.Common;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DbWatchdog.Model;
 using RestSharp;
 using Serilog;
-using Serilog.Core;
 
 namespace DbWatchdog
 {
     public partial class MainForm : Form
     {
-        private bool allowVisible;
-        
-        private List<string> _selectedMonitorTypes = new();
-
+        private WatchdogConfig _config = new();
+        private string _configPath = "config.json";
 
         public MainForm()
         {
@@ -48,28 +42,66 @@ namespace DbWatchdog
             this.btnConnect.Enabled = true;
         }
 
-        private void SetupParams()
+        private void SaveConfig()
         {
-            Properties.Settings.Default["Database"] = this.textDatabase.Text;
-            Properties.Settings.Default["DbConnectionStr"] = this.txtDbConnectionStr.Text;
-            Properties.Settings.Default["CheckInterval"] = (int)numCheckInterval.Value;
-            var monitorTypes = this.clbMonitorTypes.CheckedItems.Cast<MonitorType>().Select(mt=>mt.Id).ToArray();
-            _selectedMonitorTypes = monitorTypes.ToList();
-            var monitorTypesStrCollection = new StringCollection();
-            monitorTypesStrCollection.AddRange(monitorTypes);
-            Properties.Settings.Default.MonitorTypes = monitorTypesStrCollection;
-            Properties.Settings.Default.Save();
+            _config.System = this.textSystem.Text;
+            _config.DbName = this.textDatabase.Text;
+            _config.ConnectionString = this.txtDbConnectionStr.Text;
+            _config.CheckInterval = (int)numCheckInterval.Value;
+            _config.LineNotifyToken = this.textLineToken.Text;
+            _config.Monitors = this.clbMonitors.CheckedItems.Cast<IMonitor>().Select(m=>m.Id).ToList();
+            _config.MonitorTypes = this.clbMonitorTypes.CheckedItems.Cast<IMonitorType>().Select(mt=>mt.Id).ToList();
+            _config.SaveToFile(_configPath);
         }
         private void btnApply_Click(object sender, EventArgs e)
         {
-            SetupParams();
-            this.Hide();
-            this.notifyIcon.Visible = true;
+            SaveConfig();
+            Hide();
+            notifyIcon.Text = Text;
+            notifyIcon.BalloonTipText = @"程式已最小化到系統列";
+            notifyIcon.Visible = true;
+
 
             // setup the timer
             SetupCheckTimer();
         }
 
+        private async Task InitMonitors()
+        {
+            try
+            {
+                IDb db = btnMongo.Checked
+                    ? new MongoDb(this.txtDbConnectionStr.Text, this.textDatabase.Text)
+                    : new SqlDb(this.txtDbConnectionStr.Text);
+                var enumMonitors = await db.GetMonitors();
+                var monitors = enumMonitors.ToList();
+                this.btnApply.Enabled = true;
+                this.clbMonitors.Items.Clear();
+                foreach (var monitor in monitors)
+                {
+                    this.clbMonitors.Items.Add(monitor);
+                }
+
+                this.clbMonitors.Enabled = true;
+                var monitorIds = monitors.Select(m => m.Id).ToList();
+                var filteredSelectedMonitors = _config.Monitors.Where(m => monitorIds.Contains(m)).ToList();
+
+                // select the monitors that were previously selected
+                for (int i = 0; i < this.clbMonitors.Items.Count; i++)
+                {
+                    var monitor = (IMonitor)this.clbMonitors.Items[i];
+                    if (filteredSelectedMonitors.Contains(monitor.Id))
+                    {
+                        this.clbMonitors.SetItemChecked(i, true);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }   
+        
         private async Task InitMonitorTypes()
         {
             try
@@ -86,7 +118,7 @@ namespace DbWatchdog
                 }
                 this.clbMonitorTypes.Enabled = true;
                 var monitorTypeIds = monitorTypes.Select(mt => mt.Id).ToList();
-                var filteredSelectedMonitorTypes = _selectedMonitorTypes.Where(mt => monitorTypeIds.Contains(mt)).ToList();
+                var filteredSelectedMonitorTypes = _config.MonitorTypes.Where(mt => monitorTypeIds.Contains(mt)).ToList();
                 
                 // select the monitor types that were previously selected
                 for (int i = 0; i < this.clbMonitorTypes.Items.Count; i++)
@@ -105,6 +137,7 @@ namespace DbWatchdog
         }
         private async void btnConnect_Click(object sender, EventArgs e)
         {
+            await InitMonitors();
             await InitMonitorTypes();
         }
 
@@ -129,9 +162,7 @@ namespace DbWatchdog
                 var response = await client.PostAsync(request);
                 MessageBox.Show(response.StatusCode == System.Net.HttpStatusCode.OK ? "訊息已送出!" : "訊息送出失敗!");
                 if (response.StatusCode != System.Net.HttpStatusCode.OK) return;
-                Properties.Settings.Default["LineToken"] = this.textLineToken.Text;
-                Properties.Settings.Default.Save();
-
+                _config.LineNotifyToken = this.textLineToken.Text;
             }
             catch (Exception ex)
             {
@@ -144,11 +175,13 @@ namespace DbWatchdog
             this.btnTestLine.Enabled = this.textLineToken.Text.Length > 0;
         }
 
-        private async void MainForm_Load(object sender, EventArgs e)
+        private async Task UpdateUi()
         {
-            textLineToken.Text = Properties.Settings.Default.LineToken;
-            textDatabase.Text = Properties.Settings.Default.Database;
-            txtDbConnectionStr.Text = Properties.Settings.Default.DbConnectionStr;
+            this.Text = $@"監控程式 - {_config.System}";
+            textSystem.Text = _config.System;
+            textLineToken.Text = _config.LineNotifyToken;
+            textDatabase.Text = _config.DbName;
+            txtDbConnectionStr.Text = _config.ConnectionString;
             if (txtDbConnectionStr.Text.Contains("mongodb://"))
             {
                 btnMongo.Checked = true;
@@ -160,15 +193,23 @@ namespace DbWatchdog
                 btnSQL.Checked = true;
             }
 
-            numCheckInterval.Value = Properties.Settings.Default.CheckInterval;
-            var monitorTypes = Properties.Settings.Default.MonitorTypes;
-            if (monitorTypes is not null)
-            {
-                _selectedMonitorTypes = monitorTypes.Cast<string>().ToList();
-            }
-
-            Log.Information("MonitorTypes: " + string.Join(",", _selectedMonitorTypes));
+            numCheckInterval.Value = _config.CheckInterval;
+            await InitMonitors();
             await InitMonitorTypes();
+        }
+
+        private async void MainForm_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                _config = WatchdogConfig.FromFile(_configPath) ?? new WatchdogConfig();
+            }
+            catch (Exception)
+            {
+                _config = new WatchdogConfig();
+            }
+            
+            await UpdateUi();
         }
 
         private void txtDbConnectionStr_TextChanged(object sender, EventArgs e)
@@ -217,7 +258,21 @@ namespace DbWatchdog
                 IDb db = btnMongo.Checked? new MongoDb(this.txtDbConnectionStr.Text, this.textDatabase.Text):
                     new SqlDb(this.txtDbConnectionStr.Text);
 
-                var data = await db.GetLatestRecord("min_data", "me", _selectedMonitorTypes);
+                foreach (var monitor in _config.Monitors)
+                {
+                    var data = await db.GetLatestRecord("min_data", monitor, _config.MonitorTypes);
+                    await CheckData(data);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error occurred");
+                throw;
+            }
+            return true;
+
+            async Task<bool> CheckData(SqlDb.IDataRecord data)
+            {
                 if (data.Time == DateTime.MinValue)
                 {
                     Log.Information("No data found");
@@ -233,30 +288,60 @@ namespace DbWatchdog
                     return false;
                 }
 
-                foreach (var mt in _selectedMonitorTypes.Where(mt => !data.Values.ContainsKey(mt)))
+                foreach (var mt in _config.MonitorTypes.Where(mt => !data.Values.ContainsKey(mt)))
                 {
                     Log.Information($"{mt}: N/A");
                     await NotifyLine($"未收到{mt}測項資料");
                 }
+                return true;
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error occurred");
-                throw;
-            }
-            return true;
         }
 
         private async void btnTestMonitor_Click(object sender, EventArgs e)
         {
-            SetupParams();
+            SaveConfig();
             try
             {
                 await CheckDatabase();
+                MessageBox.Show(@"測試完成");
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
+            }
+        }
+
+        private async void btnLoadConfig_Click(object sender, EventArgs e)
+        {
+            if (openConfigDlg.ShowDialog() != DialogResult.OK) return;
+
+            _configPath = openConfigDlg.FileName;
+            _config = WatchdogConfig.FromFile(_configPath) ?? new WatchdogConfig();
+            await UpdateUi();
+        }
+
+        private void btnSaveConfig_Click(object sender, EventArgs e)
+        {
+            if(saveConfigDlg.ShowDialog() != DialogResult.OK) return;
+            _configPath = saveConfigDlg.FileName;
+            SaveConfig();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            var dlg = new DbConnectionStrForm();
+            dlg.IsSQL = btnSQL.Checked;
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                if (dlg.IsSQL)
+                {
+                    this.txtDbConnectionStr.Text = dlg.GetConnectionString();
+                }
+                else
+                {
+                    this.txtDbConnectionStr.Text = $@"mongodb://{dlg.GetServer()}";
+                    this.textDatabase.Text = dlg.GetDatabase();
+                }
             }
         }
     }
