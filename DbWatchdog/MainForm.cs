@@ -177,7 +177,10 @@ namespace DbWatchdog
 
         private async Task UpdateUi()
         {
-            this.Text = $@"監控程式 - {_config.System}";
+            // Get the version of the executing assembly
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+
+            this.Text = $@"監控程式 v{version} - {_config.System}";
             textSystem.Text = _config.System;
             textLineToken.Text = _config.LineNotifyToken;
             textDatabase.Text = _config.DbName;
