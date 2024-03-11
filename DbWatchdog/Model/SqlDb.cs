@@ -93,7 +93,7 @@ namespace DbWatchdog.Model
                 $@"Select Top 1 *
                     From {table}
                     Where [monitor] = '{monitor}'
-                    Order by [time]";
+                    Order by [time] desc";
 
             Log.Information($"GetLatestRecord: {sql}");
             var reader = await connection.ExecuteReaderAsync(sql);
