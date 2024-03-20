@@ -87,7 +87,7 @@ namespace DbWatchdog.Model
             var filter = Builders<MonitorType>.Filter
                 .Exists(r => r.Id);
             var ret =  await collection.FindAsync(filter);
-            return ret.ToList();
+            return ret.ToList().Where(mt => !mt.Id.Contains("_"));
         }
 
         public async Task<SqlDb.IDataRecord> GetLatestRecord(string table, string monitor, List<string> mtList)
@@ -122,7 +122,7 @@ namespace DbWatchdog.Model
                 return new SqlDb.DataRecord
                 {
                     Monitor = monitor,
-                    Time = record._id.time,
+                    Time = TimeZoneInfo.ConvertTimeFromUtc(record._id.time, TimeZoneInfo.Local),
                     Values = result
                 };
             }
