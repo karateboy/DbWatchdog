@@ -260,11 +260,18 @@ namespace DbWatchdog
             {
                 IDb db = btnMongo.Checked? new MongoDb(this.txtDbConnectionStr.Text, this.textDatabase.Text):
                     new SqlDb(this.txtDbConnectionStr.Text);
-
-                foreach (var monitor in _config.Monitors)
+                var monitors = await db.GetMonitors();
+                var monitorMap = monitors.ToDictionary(m => m.Id);
+                foreach (var monitorId in _config.Monitors)
                 {
-                    var data = await db.GetLatestRecord("min_data", monitor, _config.MonitorTypes);
-                    await CheckData(data);
+                    var data = await db.GetLatestRecord("min_data", monitorId, _config.MonitorTypes);
+                    if (monitorMap.TryGetValue(monitorId, out var monitor))
+                        continue;
+                    
+                    if(monitor is null)
+                        continue;
+                    
+                    await CheckData(monitor, data);
                 }
             }
             catch (Exception ex)
@@ -274,12 +281,12 @@ namespace DbWatchdog
             }
             return true;
 
-            async Task<bool> CheckData(SqlDb.IDataRecord data)
+            async Task<bool> CheckData(IMonitor monitor, SqlDb.IDataRecord data)
             {
                 if (data.Time == DateTime.MinValue)
                 {
                     Log.Information("No data found");
-                    await NotifyLine($"{_config.System} - 找不到分鐘資料");
+                    await NotifyLine($"{_config.System} - {monitor.Name}找不到分鐘資料");
                     return false;
                 }
 
@@ -287,14 +294,14 @@ namespace DbWatchdog
                 if (data.Time < DateTime.Now.AddMinutes(-(int)numCheckInterval.Value))
                 {
                     Log.Information("Data is too old");
-                    await NotifyLine($"{_config.System} - 全測項分鐘資料未更新! 最新資料時間{data.Time:G}");
+                    await NotifyLine($"{_config.System} - {monitor.Name}全測項分鐘資料未更新! 最新資料時間{data.Time:G}");
                     return false;
                 }
 
                 foreach (var mt in _config.MonitorTypes.Where(mt => !data.Values.ContainsKey(mt)))
                 {
                     Log.Information($"{mt}: N/A");
-                    await NotifyLine($"{_config.System} - 未收到{mt}測項資料");
+                    await NotifyLine($"{_config.System} - {monitor.Name}未收到{mt}測項資料");
                 }
                 return true;
             }
