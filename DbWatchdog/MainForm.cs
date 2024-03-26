@@ -266,12 +266,9 @@ namespace DbWatchdog
                 {
                     var data = await db.GetLatestRecord("min_data", monitorId, _config.MonitorTypes);
                     if (monitorMap.TryGetValue(monitorId, out var monitor))
-                        continue;
-                    
-                    if(monitor is null)
-                        continue;
-                    
-                    await CheckData(monitor, data);
+                    {
+                        await CheckData(monitor, data);
+                    }                                                                                    
                 }
             }
             catch (Exception ex)
