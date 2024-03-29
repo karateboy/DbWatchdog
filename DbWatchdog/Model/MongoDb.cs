@@ -59,6 +59,7 @@ namespace DbWatchdog.Model
             public string status;
         }
 
+        [BsonIgnoreExtraElements]
         class RecordList
         {
             public RecordListID _id;
