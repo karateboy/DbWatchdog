@@ -66,10 +66,31 @@ namespace DbWatchdog.Model
             return await connection.QueryAsync<Monitor>("SELECT * FROM [dbo].[monitor]");
         }
 
+        public async Task<List<string>> GetTableColumns(string tableName)
+        {
+            var sql = @"
+                SELECT COLUMN_NAME
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_NAME = @tableName
+            ";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@tableName", tableName }
+            };
+            
+            using var connection = new SqlConnection(_connectionString);
+            var ret = await connection.QueryAsync<string>(sql, parameters);
+            return ret.ToList();
+        }
+
         public async Task<IEnumerable<IMonitorType>> GetMonitorTypes()
         { 
+            var columns = await GetTableColumns("monitorType");
             using var connection = new SqlConnection(_connectionString);
-            return await connection.QueryAsync<MonitorType>("SELECT * FROM [dbo].[monitorType] Where [measuringBy] is not null");
+            if(!columns.Contains("measuringBy"))
+                return await connection.QueryAsync<MonitorType>("SELECT * FROM [dbo].[monitorType]");
+            
+            return await connection.QueryAsync<MonitorType>("SELECT * FROM [dbo].[monitorType] Where [measuringBy] is null");
         }
 
         public interface IDataRecord
