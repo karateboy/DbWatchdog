@@ -103,7 +103,6 @@ namespace DbWatchdog.Model
             {
                 return new SqlDb.DataRecord
                 {
-                    Monitor = monitor,
                     Time = DateTime.MinValue,
                     Values = result
                 };
@@ -122,7 +121,6 @@ namespace DbWatchdog.Model
 
                 return new SqlDb.DataRecord
                 {
-                    Monitor = monitor,
                     Time = TimeZoneInfo.ConvertTimeFromUtc(record._id.time, TimeZoneInfo.Local),
                     Values = result
                 };
