@@ -56,7 +56,7 @@ namespace DbWatchdog.Model
 
         public override string ToString()
         {
-            return Name;
+            return string.IsNullOrEmpty(Name) ? "Unknown" : Name;
         }
     }
 
@@ -69,7 +69,7 @@ namespace DbWatchdog.Model
 
         public override string ToString()
         {
-            return Name;
+            return !string.IsNullOrEmpty(monitorName) ? monitorName : "Unknown";
         }
     }
 
@@ -80,23 +80,16 @@ namespace DbWatchdog.Model
         Task<SqlDb.IDataRecord> GetLatestRecord(string table, string monitor, List<string> mtList);
     }
 
-    class SqlDb : IDb
+    class SqlDb(string connectionString) : IDb
     {
-        private readonly string _connectionString;
-
-        public SqlDb(string connectionString)
-        {
-            this._connectionString = connectionString;
-        }
-
         public async Task<IEnumerable<IMonitor>> GetMonitors()
         {
             var columns = await GetTableColumns("monitor");
-            using var connection = new SqlConnection(_connectionString);
-            if (!columns.Contains("Id"))
-                return await connection.QueryAsync<OldMonitor>("SELECT * FROM [dbo].[monitor]");
+            using var connection = new SqlConnection(connectionString);
+            if (columns.Exists(column=>column.ToLower() == "id"))
+                return await connection.QueryAsync<Monitor>("SELECT * FROM [dbo].[monitor]");
             
-            return await connection.QueryAsync<Monitor>("SELECT * FROM [dbo].[monitor]");
+            return await connection.QueryAsync<OldMonitor>("SELECT * FROM [dbo].[monitor]");
         }
 
         public async Task<List<string>> GetTableColumns(string tableName)
@@ -111,7 +104,7 @@ namespace DbWatchdog.Model
                 { "@tableName", tableName }
             };
 
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqlConnection(connectionString);
             var ret = await connection.QueryAsync<string>(sql, parameters);
             return ret.ToList();
         }
@@ -119,12 +112,12 @@ namespace DbWatchdog.Model
         public async Task<IEnumerable<IMonitorType>> GetMonitorTypes()
         {
             var columns = await GetTableColumns("monitorType");
-            using var connection = new SqlConnection(_connectionString);
-            if (!columns.Contains("measuringBy"))
+            using var connection = new SqlConnection(connectionString);
+            if (!columns.Exists(column=>string.Compare(column, "measuringBy", StringComparison.OrdinalIgnoreCase) == 0))
                 return await connection.QueryAsync<OldMonitorType>("SELECT * FROM [dbo].[monitorType]");
 
             return await connection.QueryAsync<MonitorType>(
-                "SELECT * FROM [dbo].[monitorType] Where [measuringBy] is null");
+                "SELECT * FROM [dbo].[monitorType] Where [measuringBy] is not null");
         }
 
         public interface IDataRecord
@@ -155,7 +148,7 @@ namespace DbWatchdog.Model
         }
         private async Task<IDataRecord> GetOldDbLatestRecord(string table, string monitor, List<string> mtList)
         {
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqlConnection(connectionString);
             var sql =
                 $@"Select Top 1 *
                     From MinRecord2
@@ -203,7 +196,7 @@ namespace DbWatchdog.Model
         
         private async Task<IDataRecord> GetNewLatestRecord(string table, string monitor, List<string> mtList)
         {
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqlConnection(connectionString);
             var sql =
                 $@"Select Top 1 *
                     From {table}
