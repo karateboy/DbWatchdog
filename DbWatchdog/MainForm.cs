@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Data.Common;
 using System.Linq;
+using System.Net;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DbWatchdog.Model;
@@ -28,42 +27,45 @@ namespace DbWatchdog
 
         private void btnMongo_CheckedChanged(object sender, EventArgs e)
         {
-            this.txtDbConnectionStr.Text = "mongodb://localhost";
-            this.textDatabase.Text = "logger2";
-            this.textDatabase.Enabled = true;
-            this.btnConnect.Enabled = true;
+            txtDbConnectionStr.Text = "mongodb://localhost";
+            textDatabase.Text = "logger2";
+            textDatabase.Enabled = true;
+            btnConnect.Enabled = true;
         }
 
         private void btnSQL_CheckedChanged(object sender, EventArgs e)
         {
-            this.txtDbConnectionStr.Text = "Server=localhost;Database=logger2;Trusted_Connection=True;";
-            this.textDatabase.Text = "";
-            this.textDatabase.Enabled = false;
-            this.btnConnect.Enabled = true;
+            txtDbConnectionStr.Text = "Server=localhost;Database=logger2;Trusted_Connection=True;";
+            textDatabase.Text = "";
+            textDatabase.Enabled = false;
+            btnConnect.Enabled = true;
         }
 
         private void SaveConfig()
         {
-            _config.System = this.textSystem.Text;
-            _config.DbName = this.textDatabase.Text;
-            _config.ConnectionString = this.txtDbConnectionStr.Text;
+            _config.System = textSystem.Text;
+            _config.DbName = textDatabase.Text;
+            _config.ConnectionString = txtDbConnectionStr.Text;
             _config.CheckInterval = (int)numCheckInterval.Value;
-            _config.LineNotifyToken = this.textLineToken.Text;
-            _config.Monitors = this.clbMonitors.CheckedItems.Cast<IMonitor>().Select(m=>m.Id).ToList();
-            _config.MonitorTypes = this.clbMonitorTypes.CheckedItems.Cast<IMonitorType>().Select(mt=>mt.Id).ToList();
+            _config.LineNotifyToken = textLineToken.Text;
+            _config.Monitors = clbMonitors.CheckedItems.Cast<IMonitor>().Select(m=>m.Id).ToList();
+            _config.MonitorTypes = clbMonitorTypes.CheckedItems.Cast<IMonitorType>().Select(mt=>mt.Id).ToList();
             _config.SaveToFile(_configPath);
         }
-        private void btnApply_Click(object sender, EventArgs e)
+
+        private void StartMonitoring()
         {
             SaveConfig();
             Hide();
             notifyIcon.Text = Text;
             notifyIcon.BalloonTipText = @"程式已最小化到系統列";
             notifyIcon.Visible = true;
-
-
             // setup the timer
             SetupCheckTimer();
+        }
+        private void btnApply_Click(object sender, EventArgs e)
+        {
+            StartMonitoring();
         }
 
         private async Task InitMonitors()
@@ -71,28 +73,28 @@ namespace DbWatchdog
             try
             {
                 IDb db = btnMongo.Checked
-                    ? new MongoDb(this.txtDbConnectionStr.Text, this.textDatabase.Text)
-                    : new SqlDb(this.txtDbConnectionStr.Text);
+                    ? new MongoDb(txtDbConnectionStr.Text, textDatabase.Text)
+                    : new SqlDb(txtDbConnectionStr.Text);
                 var enumMonitors = await db.GetMonitors();
                 var monitors = enumMonitors.ToList();
-                this.btnApply.Enabled = true;
-                this.clbMonitors.Items.Clear();
+                btnApply.Enabled = true;
+                clbMonitors.Items.Clear();
                 foreach (var monitor in monitors)
                 {
-                    this.clbMonitors.Items.Add(monitor);
+                    clbMonitors.Items.Add(monitor);
                 }
 
-                this.clbMonitors.Enabled = true;
+                clbMonitors.Enabled = true;
                 var monitorIds = monitors.Select(m => m.Id).ToList();
                 var filteredSelectedMonitors = _config.Monitors.Where(m => monitorIds.Contains(m)).ToList();
 
                 // select the monitors that were previously selected
-                for (int i = 0; i < this.clbMonitors.Items.Count; i++)
+                for (int i = 0; i < clbMonitors.Items.Count; i++)
                 {
-                    var monitor = (IMonitor)this.clbMonitors.Items[i];
+                    var monitor = (IMonitor)clbMonitors.Items[i];
                     if (filteredSelectedMonitors.Contains(monitor.Id))
                     {
-                        this.clbMonitors.SetItemChecked(i, true);
+                        clbMonitors.SetItemChecked(i, true);
                     }
                 }
             }
@@ -106,27 +108,27 @@ namespace DbWatchdog
         {
             try
             {
-                IDb db = btnMongo.Checked? new MongoDb(this.txtDbConnectionStr.Text, this.textDatabase.Text):
-                    new SqlDb(this.txtDbConnectionStr.Text);
+                IDb db = btnMongo.Checked? new MongoDb(txtDbConnectionStr.Text, textDatabase.Text):
+                    new SqlDb(txtDbConnectionStr.Text);
                 var enumMonitorTypes = await db.GetMonitorTypes();
                 var monitorTypes = enumMonitorTypes.ToList();
-                this.btnApply.Enabled = true;
-                this.clbMonitorTypes.Items.Clear();
+                btnApply.Enabled = true;
+                clbMonitorTypes.Items.Clear();
                 foreach (var monitorType in monitorTypes)
                 {
-                    this.clbMonitorTypes.Items.Add(monitorType);
+                    clbMonitorTypes.Items.Add(monitorType);
                 }
-                this.clbMonitorTypes.Enabled = true;
+                clbMonitorTypes.Enabled = true;
                 var monitorTypeIds = monitorTypes.Select(mt => mt.Id).ToList();
                 var filteredSelectedMonitorTypes = _config.MonitorTypes.Where(mt => monitorTypeIds.Contains(mt)).ToList();
                 
                 // select the monitor types that were previously selected
-                for (int i = 0; i < this.clbMonitorTypes.Items.Count; i++)
+                for (int i = 0; i < clbMonitorTypes.Items.Count; i++)
                 {
-                    var monitorType = (IMonitorType)this.clbMonitorTypes.Items[i];
+                    var monitorType = (IMonitorType)clbMonitorTypes.Items[i];
                     if (filteredSelectedMonitorTypes.Contains(monitorType.Id))
                     {
-                        this.clbMonitorTypes.SetItemChecked(i, true);
+                        clbMonitorTypes.SetItemChecked(i, true);
                     }
                 }
             }
@@ -143,8 +145,8 @@ namespace DbWatchdog
 
         private void notifyIcon_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            this.Show();
-            this.notifyIcon.Visible = false;
+            Show();
+            notifyIcon.Visible = false;
         }
 
         // Test the line token qjhK8FGHl6d12H7qAOAkOlY0kzkWcFUTw33Kr39lwK8
@@ -156,13 +158,13 @@ namespace DbWatchdog
                 var options = new RestClientOptions("https://notify-api.line.me/");
                 var client = new RestClient(options);
                 var request = new RestRequest("api/notify")
-                    .AddHeader("Authorization", $"Bearer {this.textLineToken.Text}")
+                    .AddHeader("Authorization", $"Bearer {textLineToken.Text}")
                     .AddParameter("message", "資料庫Watchdog 測試訊息!");
 
                 var response = await client.PostAsync(request);
-                MessageBox.Show(response.StatusCode == System.Net.HttpStatusCode.OK ? "訊息已送出!" : "訊息送出失敗!");
-                if (response.StatusCode != System.Net.HttpStatusCode.OK) return;
-                _config.LineNotifyToken = this.textLineToken.Text;
+                MessageBox.Show(response.StatusCode == HttpStatusCode.OK ? "訊息已送出!" : "訊息送出失敗!");
+                if (response.StatusCode != HttpStatusCode.OK) return;
+                _config.LineNotifyToken = textLineToken.Text;
             }
             catch (Exception ex)
             {
@@ -172,15 +174,15 @@ namespace DbWatchdog
 
         private void textLineToken_TextChanged(object sender, EventArgs e)
         {
-            this.btnTestLine.Enabled = this.textLineToken.Text.Length > 0;
+            btnTestLine.Enabled = textLineToken.Text.Length > 0;
         }
 
         private async Task UpdateUi()
         {
             // Get the version of the executing assembly
-            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
 
-            this.Text = $@"監控程式 v{version} - {_config.System}";
+            Text = $@"監控程式 v{version} - {_config.System}";
             textSystem.Text = _config.System;
             textLineToken.Text = _config.LineNotifyToken;
             textDatabase.Text = _config.DbName;
@@ -203,8 +205,18 @@ namespace DbWatchdog
 
         private async void MainForm_Load(object sender, EventArgs e)
         {
+            bool assignedByArgs = false;
             try
             {
+                string[] args = Environment.GetCommandLineArgs();
+                if (args.Length > 1)
+                {
+                    assignedByArgs = true;
+                    _configPath = args[1];
+                    Log.Information("Load config from {ConfigPath}", _configPath);
+                    if(_config.Monitors.Count <= 0 || _config.MonitorTypes.Count <= 0)
+                        Log.Warning("設定檔案中沒有測站或測項資料，請重新設定");
+                }
                 _config = WatchdogConfig.FromFile(_configPath) ?? new WatchdogConfig();
             }
             catch (Exception)
@@ -213,6 +225,11 @@ namespace DbWatchdog
             }
             
             await UpdateUi();
+            if (!assignedByArgs ||
+                _config.Monitors.Count <= 0 || _config.MonitorTypes.Count <= 0) return;
+            
+            Log.Information("Start monitoring");
+            StartMonitoring();
         }
 
         private void txtDbConnectionStr_TextChanged(object sender, EventArgs e)
@@ -220,7 +237,7 @@ namespace DbWatchdog
             btnApply.Enabled = txtDbConnectionStr.Text.Length > 0;
         }
 
-        private Timer? _checkTimer = null;
+        private Timer? _checkTimer;
         private void SetupCheckTimer()
         {
             if (_checkTimer is not null)
@@ -243,23 +260,23 @@ namespace DbWatchdog
 
         private async Task<bool> NotifyLine(string message)
         {
-            if(string.IsNullOrEmpty(this.textLineToken.Text)) return false;
+            if(string.IsNullOrEmpty(textLineToken.Text)) return false;
 
             var options = new RestClientOptions("https://notify-api.line.me/");
             var client = new RestClient(options);
             var request = new RestRequest("api/notify")
-                .AddHeader("Authorization", $"Bearer {this.textLineToken.Text}")
+                .AddHeader("Authorization", $"Bearer {textLineToken.Text}")
                 .AddParameter("message", message);
             var response = await client.PostAsync(request);
-            return response.StatusCode == System.Net.HttpStatusCode.OK;
+            return response.StatusCode == HttpStatusCode.OK;
         }
 
         private async Task<bool> CheckDatabase()
         {
             try
             {
-                IDb db = btnMongo.Checked? new MongoDb(this.txtDbConnectionStr.Text, this.textDatabase.Text):
-                    new SqlDb(this.txtDbConnectionStr.Text);
+                IDb db = btnMongo.Checked? new MongoDb(txtDbConnectionStr.Text, textDatabase.Text):
+                    new SqlDb(txtDbConnectionStr.Text);
                 var monitors = await db.GetMonitors();
                 var monitorMap = monitors.ToDictionary(m => m.Id);
                 foreach (var monitorId in _config.Monitors)
@@ -342,12 +359,12 @@ namespace DbWatchdog
             {
                 if (dlg.IsSQL)
                 {
-                    this.txtDbConnectionStr.Text = dlg.GetConnectionString();
+                    txtDbConnectionStr.Text = dlg.GetConnectionString();
                 }
                 else
                 {
-                    this.txtDbConnectionStr.Text = $@"mongodb://{dlg.GetServer()}";
-                    this.textDatabase.Text = dlg.GetDatabase();
+                    txtDbConnectionStr.Text = $@"mongodb://{dlg.GetServer()}";
+                    textDatabase.Text = dlg.GetDatabase();
                 }
             }
         }
