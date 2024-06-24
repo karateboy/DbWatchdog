@@ -188,7 +188,7 @@ namespace DbWatchdog.Model
         public async Task<IDataRecord> GetLatestRecord(string table, string monitor, List<string> mtList)
         {
             var columns = await GetTableColumns("monitor");
-            if (!columns.Contains("Id"))
+            if (!columns.Contains("id"))
                 return await GetOldDbLatestRecord(table, monitor, mtList);
             
             return await GetNewLatestRecord(table, monitor, mtList);

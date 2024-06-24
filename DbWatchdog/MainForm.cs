@@ -218,6 +218,8 @@ namespace DbWatchdog
                         Log.Warning("設定檔案中沒有測站或測項資料，請重新設定");
                 }
                 _config = WatchdogConfig.FromFile(_configPath) ?? new WatchdogConfig();
+                assignedByArgs = true;
+                Log.Information("Load config from {ConfigPath}", _configPath);
             }
             catch (Exception)
             {
