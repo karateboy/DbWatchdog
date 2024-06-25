@@ -2,11 +2,13 @@
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DbWatchdog.Model;
 using RestSharp;
 using Serilog;
+using Timer = System.Windows.Forms.Timer;
 
 namespace DbWatchdog
 {
@@ -27,18 +29,32 @@ namespace DbWatchdog
 
         private void btnMongo_CheckedChanged(object sender, EventArgs e)
         {
-            txtDbConnectionStr.Text = "mongodb://localhost";
-            textDatabase.Text = "logger2";
-            textDatabase.Enabled = true;
-            btnConnect.Enabled = true;
+            if (btnMongo.Checked)
+            {
+                if(!txtDbConnectionStr.Text.Contains("mongodb://localhost"))
+                {
+                    txtDbConnectionStr.Text = "mongodb://localhost";
+                    textDatabase.Text = "logger2";
+                }
+                
+                textDatabase.Enabled = true;
+                btnConnect.Enabled = true;
+            }
         }
 
         private void btnSQL_CheckedChanged(object sender, EventArgs e)
         {
-            txtDbConnectionStr.Text = "Server=localhost;Database=logger2;Trusted_Connection=True;";
-            textDatabase.Text = "";
-            textDatabase.Enabled = false;
-            btnConnect.Enabled = true;
+            if (btnSQL.Checked)
+            {
+                if (txtDbConnectionStr.Text.Contains("mongodb://"))
+                {
+                    txtDbConnectionStr.Text = "Server=localhost;Database=logger2;Trusted_Connection=True;";
+                    textDatabase.Text = "";    
+                }
+                
+                textDatabase.Enabled = false;
+                btnConnect.Enabled = true;
+            }
         }
 
         private void SaveConfig()
@@ -48,14 +64,13 @@ namespace DbWatchdog
             _config.ConnectionString = txtDbConnectionStr.Text;
             _config.CheckInterval = (int)numCheckInterval.Value;
             _config.LineNotifyToken = textLineToken.Text;
-            _config.Monitors = clbMonitors.CheckedItems.Cast<IMonitor>().Select(m=>m.Id).ToList();
-            _config.MonitorTypes = clbMonitorTypes.CheckedItems.Cast<IMonitorType>().Select(mt=>mt.Id).ToList();
+            _config.Monitors = clbMonitors.CheckedItems.Cast<IMonitor>().Select(m => m.Id).ToList();
+            _config.MonitorTypes = clbMonitorTypes.CheckedItems.Cast<IMonitorType>().Select(mt => mt.Id).ToList();
             _config.SaveToFile(_configPath);
         }
 
         private void StartMonitoring()
         {
-            SaveConfig();
             Hide();
             notifyIcon.Text = Text;
             notifyIcon.BalloonTipText = @"程式已最小化到系統列";
@@ -63,6 +78,7 @@ namespace DbWatchdog
             // setup the timer
             SetupCheckTimer();
         }
+
         private void btnApply_Click(object sender, EventArgs e)
         {
             StartMonitoring();
@@ -102,14 +118,15 @@ namespace DbWatchdog
             {
                 MessageBox.Show(ex.Message);
             }
-        }   
-        
+        }
+
         private async Task InitMonitorTypes()
         {
             try
             {
-                IDb db = btnMongo.Checked? new MongoDb(txtDbConnectionStr.Text, textDatabase.Text):
-                    new SqlDb(txtDbConnectionStr.Text);
+                IDb db = btnMongo.Checked
+                    ? new MongoDb(txtDbConnectionStr.Text, textDatabase.Text)
+                    : new SqlDb(txtDbConnectionStr.Text);
                 var enumMonitorTypes = await db.GetMonitorTypes();
                 var monitorTypes = enumMonitorTypes.ToList();
                 btnApply.Enabled = true;
@@ -118,10 +135,12 @@ namespace DbWatchdog
                 {
                     clbMonitorTypes.Items.Add(monitorType);
                 }
+
                 clbMonitorTypes.Enabled = true;
                 var monitorTypeIds = monitorTypes.Select(mt => mt.Id).ToList();
-                var filteredSelectedMonitorTypes = _config.MonitorTypes.Where(mt => monitorTypeIds.Contains(mt)).ToList();
-                
+                var filteredSelectedMonitorTypes =
+                    _config.MonitorTypes.Where(mt => monitorTypeIds.Contains(mt)).ToList();
+
                 // select the monitor types that were previously selected
                 for (int i = 0; i < clbMonitorTypes.Items.Count; i++)
                 {
@@ -137,6 +156,7 @@ namespace DbWatchdog
                 MessageBox.Show(ex.Message);
             }
         }
+
         private async void btnConnect_Click(object sender, EventArgs e)
         {
             await InitMonitors();
@@ -176,7 +196,7 @@ namespace DbWatchdog
         {
             btnTestLine.Enabled = textLineToken.Text.Length > 0;
         }
-
+        
         private async Task UpdateUi()
         {
             // Get the version of the executing assembly
@@ -187,16 +207,24 @@ namespace DbWatchdog
             textLineToken.Text = _config.LineNotifyToken;
             textDatabase.Text = _config.DbName;
             txtDbConnectionStr.Text = _config.ConnectionString;
+
             if (txtDbConnectionStr.Text.Contains("mongodb://"))
             {
-                btnMongo.Checked = true;
-                btnSQL.Checked = false;
+                Invoke(() =>
+                {
+                    btnMongo.Checked = true;
+                    btnSQL.Checked = false;
+                });
             }
             else
             {
-                btnMongo.Checked = false;
-                btnSQL.Checked = true;
+                Invoke(() =>
+                {
+                    btnMongo.Checked = false;
+                    btnSQL.Checked = true;
+                });
             }
+
 
             numCheckInterval.Value = _config.CheckInterval;
             await InitMonitors();
@@ -213,23 +241,31 @@ namespace DbWatchdog
                 {
                     assignedByArgs = true;
                     _configPath = args[1];
-                    Log.Information("Load config from {ConfigPath}", _configPath);
-                    if(_config.Monitors.Count <= 0 || _config.MonitorTypes.Count <= 0)
-                        Log.Warning("設定檔案中沒有測站或測項資料，請重新設定");
                 }
-                _config = WatchdogConfig.FromFile(_configPath) ?? new WatchdogConfig();
-                assignedByArgs = true;
-                Log.Information("Load config from {ConfigPath}", _configPath);
+
+                var argsConfig = WatchdogConfig.FromFile(_configPath);
+                if (argsConfig is not null)
+                {
+                    _config = argsConfig;
+                    Log.Information("Load config from {ConfigPath}", _configPath);
+                }
+                else
+                {
+                    Log.Information("Config file not found, use default config");
+                    assignedByArgs = false;
+                    _config = new WatchdogConfig();
+                }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Error(ex, "Error occurred");
                 _config = new WatchdogConfig();
             }
-            
+
             await UpdateUi();
             if (!assignedByArgs ||
                 _config.Monitors.Count <= 0 || _config.MonitorTypes.Count <= 0) return;
-            
+
             Log.Information("Start monitoring");
             StartMonitoring();
         }
@@ -240,6 +276,7 @@ namespace DbWatchdog
         }
 
         private Timer? _checkTimer;
+
         private void SetupCheckTimer()
         {
             if (_checkTimer is not null)
@@ -253,16 +290,13 @@ namespace DbWatchdog
             Log.Information("Start timer with {Interval} min interval", numCheckInterval.Value);
             _checkTimer = new Timer();
             _checkTimer.Interval = (int)numCheckInterval.Value * 1000 * 60;
-            _checkTimer.Tick += async (sender, args) =>
-            {
-                await CheckDatabase();
-            };
+            _checkTimer.Tick += async (sender, args) => { await CheckDatabase(); };
             _checkTimer.Start();
         }
 
         private async Task<bool> NotifyLine(string message)
         {
-            if(string.IsNullOrEmpty(textLineToken.Text)) return false;
+            if (string.IsNullOrEmpty(textLineToken.Text)) return false;
 
             var options = new RestClientOptions("https://notify-api.line.me/");
             var client = new RestClient(options);
@@ -277,8 +311,9 @@ namespace DbWatchdog
         {
             try
             {
-                IDb db = btnMongo.Checked? new MongoDb(txtDbConnectionStr.Text, textDatabase.Text):
-                    new SqlDb(txtDbConnectionStr.Text);
+                IDb db = btnMongo.Checked
+                    ? new MongoDb(txtDbConnectionStr.Text, textDatabase.Text)
+                    : new SqlDb(txtDbConnectionStr.Text);
                 var monitors = await db.GetMonitors();
                 var monitorMap = monitors.ToDictionary(m => m.Id);
                 foreach (var monitorId in _config.Monitors)
@@ -287,7 +322,7 @@ namespace DbWatchdog
                     if (monitorMap.TryGetValue(monitorId, out var monitor))
                     {
                         await CheckData(monitor, data);
-                    }                                                                                    
+                    }
                 }
             }
             catch (Exception ex)
@@ -295,6 +330,7 @@ namespace DbWatchdog
                 Log.Error(ex, "Error occurred");
                 throw;
             }
+
             return true;
 
             async Task<bool> CheckData(IMonitor monitor, SqlDb.IDataRecord data)
@@ -319,6 +355,7 @@ namespace DbWatchdog
                     Log.Information($"{mt}: N/A");
                     await NotifyLine($"{_config.System} - {monitor.Name}未收到{mt}測項資料");
                 }
+
                 return true;
             }
         }
@@ -348,7 +385,7 @@ namespace DbWatchdog
 
         private void btnSaveConfig_Click(object sender, EventArgs e)
         {
-            if(saveConfigDlg.ShowDialog() != DialogResult.OK) return;
+            if (saveConfigDlg.ShowDialog() != DialogResult.OK) return;
             _configPath = saveConfigDlg.FileName;
             SaveConfig();
         }
