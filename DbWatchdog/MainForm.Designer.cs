@@ -147,6 +147,11 @@
             // 
             this.numCheckInterval.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.numCheckInterval.Location = new System.Drawing.Point(184, 587);
+            this.numCheckInterval.Maximum = new decimal(new int[] {
+            3000,
+            0,
+            0,
+            0});
             this.numCheckInterval.Minimum = new decimal(new int[] {
             1,
             0,
