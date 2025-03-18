@@ -174,17 +174,20 @@ namespace DbWatchdog
         private async void btnTestLine_Click(object sender, EventArgs e)
         {
             try
-            {
-                var options = new RestClientOptions("https://notify-api.line.me/");
+            { 
+                var resp = await NotifyLine("資料庫Watchdog 測試訊息!");
+             /*
+                var options = new RestClientOptions("https://api.line.me/");
                 var client = new RestClient(options);
-                var request = new RestRequest("api/notify")
+                //"資料庫Watchdog 測試訊息!"
+                var request = new RestRequest("v2/bot/message/broadcast")
                     .AddHeader("Authorization", $"Bearer {textLineToken.Text}")
-                    .AddParameter("message", "資料庫Watchdog 測試訊息!");
+                    .AddJsonBody(new { messages = new [] { new { type = "text", text = "資料庫Watchdog 測試訊息!" } } });
 
                 var response = await client.PostAsync(request);
-                MessageBox.Show(response.StatusCode == HttpStatusCode.OK ? "訊息已送出!" : "訊息送出失敗!");
-                if (response.StatusCode != HttpStatusCode.OK) return;
-                _config.LineNotifyToken = textLineToken.Text;
+             */
+                MessageBox.Show(resp ? "訊息已送出!" : "訊息送出失敗!");
+                if (resp) _config.LineNotifyToken = textLineToken.Text;
             }
             catch (Exception ex)
             {
@@ -298,11 +301,11 @@ namespace DbWatchdog
         {
             if (string.IsNullOrEmpty(textLineToken.Text)) return false;
 
-            var options = new RestClientOptions("https://notify-api.line.me/");
+            var options = new RestClientOptions("https://api.line.me/");
             var client = new RestClient(options);
-            var request = new RestRequest("api/notify")
+            var request = new RestRequest("v2/bot/message/broadcast")
                 .AddHeader("Authorization", $"Bearer {textLineToken.Text}")
-                .AddParameter("message", message);
+                .AddJsonBody(new { messages = new [] { new { type = "text", text = message } } });
             var response = await client.PostAsync(request);
             return response.StatusCode == HttpStatusCode.OK;
         }
@@ -406,6 +409,11 @@ namespace DbWatchdog
                     textDatabase.Text = dlg.GetDatabase();
                 }
             }
+        }
+
+        private void label5_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
