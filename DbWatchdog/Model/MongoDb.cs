@@ -88,7 +88,7 @@ namespace DbWatchdog.Model
             var filter = Builders<MonitorType>.Filter
                 .Exists(r => r.Id);
             var ret =  await collection.FindAsync(filter);
-            return ret.ToList().Where(mt => !mt.Id.Contains("_"));
+            return ret.ToList();
         }
 
         public async Task<SqlDb.IDataRecord> GetLatestRecord(string table, string monitor, List<string> mtList)
