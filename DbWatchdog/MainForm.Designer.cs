@@ -59,6 +59,7 @@
             this.button1 = new System.Windows.Forms.Button();
             this.saveConfigDlg = new System.Windows.Forms.SaveFileDialog();
             this.openConfigDlg = new System.Windows.Forms.OpenFileDialog();
+            this.chkHourData = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.numCheckInterval)).BeginInit();
             this.SuspendLayout();
             // 
@@ -346,12 +347,23 @@
             this.openConfigDlg.Filter = "設定檔案|*.json|所有檔案|*.*";
             this.openConfigDlg.Title = "開啟設定";
             // 
+            // chkHourData
+            // 
+            this.chkHourData.AutoSize = true;
+            this.chkHourData.Location = new System.Drawing.Point(351, 592);
+            this.chkHourData.Name = "chkHourData";
+            this.chkHourData.Size = new System.Drawing.Size(124, 28);
+            this.chkHourData.TabIndex = 25;
+            this.chkHourData.Text = "檢查小時值";
+            this.chkHourData.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaption;
             this.ClientSize = new System.Drawing.Size(794, 710);
+            this.Controls.Add(this.chkHourData);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.btnSaveConfig);
             this.Controls.Add(this.btnLoadConfig);
@@ -421,5 +433,6 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.SaveFileDialog saveConfigDlg;
         private System.Windows.Forms.OpenFileDialog openConfigDlg;
+        private System.Windows.Forms.CheckBox chkHourData;
     }
 }

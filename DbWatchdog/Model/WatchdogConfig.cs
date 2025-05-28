@@ -17,6 +17,8 @@ namespace DbWatchdog.Model
         public List<string> Monitors { get; set; } = new List<string>();
         public List<string> MonitorTypes { get; set; } = new List<string>();
         public string LineNotifyToken { get; set; } = "";
+        public bool CheckHourData { get; set; } = false;
+
 
         public static WatchdogConfig? FromFile(string path)
         {

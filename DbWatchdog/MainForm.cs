@@ -31,12 +31,12 @@ namespace DbWatchdog
         {
             if (btnMongo.Checked)
             {
-                if(!txtDbConnectionStr.Text.Contains("mongodb://localhost"))
+                if (!txtDbConnectionStr.Text.Contains("mongodb://localhost"))
                 {
                     txtDbConnectionStr.Text = "mongodb://localhost";
                     textDatabase.Text = "logger2";
                 }
-                
+
                 textDatabase.Enabled = true;
                 btnConnect.Enabled = true;
             }
@@ -49,9 +49,9 @@ namespace DbWatchdog
                 if (txtDbConnectionStr.Text.Contains("mongodb://"))
                 {
                     txtDbConnectionStr.Text = "Server=localhost;Database=logger2;Trusted_Connection=True;";
-                    textDatabase.Text = "";    
+                    textDatabase.Text = "";
                 }
-                
+
                 textDatabase.Enabled = false;
                 btnConnect.Enabled = true;
             }
@@ -66,6 +66,7 @@ namespace DbWatchdog
             _config.LineNotifyToken = textLineToken.Text;
             _config.Monitors = clbMonitors.CheckedItems.Cast<IMonitor>().Select(m => m.Id).ToList();
             _config.MonitorTypes = clbMonitorTypes.CheckedItems.Cast<IMonitorType>().Select(mt => mt.Id).ToList();
+            _config.CheckHourData = chkHourData.Checked;
             _config.SaveToFile(_configPath);
         }
 
@@ -174,18 +175,18 @@ namespace DbWatchdog
         private async void btnTestLine_Click(object sender, EventArgs e)
         {
             try
-            { 
+            {
                 var resp = await NotifyLine("資料庫Watchdog 測試訊息!");
-             /*
-                var options = new RestClientOptions("https://api.line.me/");
-                var client = new RestClient(options);
-                //"資料庫Watchdog 測試訊息!"
-                var request = new RestRequest("v2/bot/message/broadcast")
-                    .AddHeader("Authorization", $"Bearer {textLineToken.Text}")
-                    .AddJsonBody(new { messages = new [] { new { type = "text", text = "資料庫Watchdog 測試訊息!" } } });
+                /*
+                   var options = new RestClientOptions("https://api.line.me/");
+                   var client = new RestClient(options);
+                   //"資料庫Watchdog 測試訊息!"
+                   var request = new RestRequest("v2/bot/message/broadcast")
+                       .AddHeader("Authorization", $"Bearer {textLineToken.Text}")
+                       .AddJsonBody(new { messages = new [] { new { type = "text", text = "資料庫Watchdog 測試訊息!" } } });
 
-                var response = await client.PostAsync(request);
-             */
+                   var response = await client.PostAsync(request);
+                */
                 MessageBox.Show(resp ? "訊息已送出!" : "訊息送出失敗!");
                 if (resp) _config.LineNotifyToken = textLineToken.Text;
             }
@@ -199,7 +200,7 @@ namespace DbWatchdog
         {
             btnTestLine.Enabled = textLineToken.Text.Length > 0;
         }
-        
+
         private async Task UpdateUi()
         {
             // Get the version of the executing assembly
@@ -230,6 +231,7 @@ namespace DbWatchdog
 
 
             numCheckInterval.Value = _config.CheckInterval;
+            chkHourData.Checked = _config.CheckHourData;
             await InitMonitors();
             await InitMonitorTypes();
         }
@@ -305,7 +307,7 @@ namespace DbWatchdog
             var client = new RestClient(options);
             var request = new RestRequest("v2/bot/message/broadcast")
                 .AddHeader("Authorization", $"Bearer {textLineToken.Text}")
-                .AddJsonBody(new { messages = new [] { new { type = "text", text = message } } });
+                .AddJsonBody(new { messages = new[] { new { type = "text", text = message } } });
             var response = await client.PostAsync(request);
             return response.StatusCode == HttpStatusCode.OK;
         }
@@ -321,7 +323,7 @@ namespace DbWatchdog
                 var monitorMap = monitors.ToDictionary(m => m.Id);
                 foreach (var monitorId in _config.Monitors)
                 {
-                    var data = await db.GetLatestRecord("min_data", monitorId, _config.MonitorTypes);
+                    var data = await db.GetLatestRecord(_config.CheckHourData ? "hour_data" : "min_data", monitorId, _config.MonitorTypes);
                     if (monitorMap.TryGetValue(monitorId, out var monitor))
                     {
                         await CheckData(monitor, data);

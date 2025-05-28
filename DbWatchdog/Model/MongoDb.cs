@@ -93,7 +93,7 @@ namespace DbWatchdog.Model
 
         public async Task<SqlDb.IDataRecord> GetLatestRecord(string table, string monitor, List<string> mtList)
         {
-            var collection = _client.GetDatabase(_database).GetCollection<RecordList>("min_data");
+            var collection = _client.GetDatabase(_database).GetCollection<RecordList>(table);
             var filter = Builders<RecordList>.Filter
                 .Eq(r => r._id.monitor, monitor);
             var sort = Builders<RecordList>.Sort.Descending(r => r._id.time);
