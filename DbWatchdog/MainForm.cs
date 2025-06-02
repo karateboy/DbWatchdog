@@ -340,10 +340,11 @@ namespace DbWatchdog
 
             async Task<bool> CheckData(IMonitor monitor, SqlDb.IDataRecord data)
             {
+                var dataType = _config.CheckHourData ? "小時" : "分鐘";
                 if (data.Time == DateTime.MinValue)
                 {
                     Log.Information("No data found");
-                    await NotifyLine($"{_config.System} - {monitor.Name}找不到分鐘資料");
+                    await NotifyLine($"{_config.System} - {monitor.Name}找不到{dataType}資料");
                     return false;
                 }
 
@@ -351,13 +352,13 @@ namespace DbWatchdog
                 if (data.Time < DateTime.Now.AddMinutes(-(int)numCheckInterval.Value))
                 {
                     Log.Information("Data is too old");
-                    await NotifyLine($"{_config.System} - {monitor.Name}全測項分鐘資料未更新! 最新資料時間{data.Time:G}");
+                    await NotifyLine($"{_config.System} - {monitor.Name}全測項{dataType}資料未更新! 最新資料時間{data.Time:G}");
                     return false;
                 }
 
                 foreach (var mt in _config.MonitorTypes.Where(mt => !data.Values.ContainsKey(mt)))
                 {
-                    Log.Information($"{mt}: N/A");
+                    Log.Information("{Mt}: N/A", mt);
                     await NotifyLine($"{_config.System} - {monitor.Name}未收到{mt}測項資料");
                 }
 
