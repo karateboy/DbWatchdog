@@ -60,13 +60,17 @@
             this.saveConfigDlg = new System.Windows.Forms.SaveFileDialog();
             this.openConfigDlg = new System.Windows.Forms.OpenFileDialog();
             this.chkHourData = new System.Windows.Forms.CheckBox();
+            this.btnExploreLogDir = new System.Windows.Forms.Button();
+            this.numLagAllowed = new System.Windows.Forms.NumericUpDown();
+            this.label9 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.numCheckInterval)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numLagAllowed)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
             // 
             this.label1.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label1.Location = new System.Drawing.Point(19, 61);
+            this.label1.Location = new System.Drawing.Point(19, 93);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(150, 25);
             this.label1.TabIndex = 0;
@@ -75,7 +79,7 @@
             // btnMongo
             // 
             this.btnMongo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnMongo.Location = new System.Drawing.Point(187, 61);
+            this.btnMongo.Location = new System.Drawing.Point(187, 93);
             this.btnMongo.Name = "btnMongo";
             this.btnMongo.Size = new System.Drawing.Size(158, 31);
             this.btnMongo.TabIndex = 1;
@@ -87,7 +91,7 @@
             // btnSQL
             // 
             this.btnSQL.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSQL.Location = new System.Drawing.Point(351, 61);
+            this.btnSQL.Location = new System.Drawing.Point(351, 93);
             this.btnSQL.Name = "btnSQL";
             this.btnSQL.Size = new System.Drawing.Size(154, 31);
             this.btnSQL.TabIndex = 2;
@@ -99,7 +103,7 @@
             // label2
             // 
             this.label2.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label2.Location = new System.Drawing.Point(19, 137);
+            this.label2.Location = new System.Drawing.Point(19, 169);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(150, 25);
             this.label2.TabIndex = 3;
@@ -108,7 +112,7 @@
             // txtDbConnectionStr
             // 
             this.txtDbConnectionStr.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtDbConnectionStr.Location = new System.Drawing.Point(184, 137);
+            this.txtDbConnectionStr.Location = new System.Drawing.Point(184, 169);
             this.txtDbConnectionStr.Name = "txtDbConnectionStr";
             this.txtDbConnectionStr.Size = new System.Drawing.Size(515, 33);
             this.txtDbConnectionStr.TabIndex = 4;
@@ -117,7 +121,7 @@
             // label3
             // 
             this.label3.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label3.Location = new System.Drawing.Point(19, 353);
+            this.label3.Location = new System.Drawing.Point(19, 385);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(150, 25);
             this.label3.TabIndex = 5;
@@ -127,7 +131,7 @@
             // 
             this.btnConnect.Anchor = System.Windows.Forms.AnchorStyles.Right;
             this.btnConnect.Enabled = false;
-            this.btnConnect.Location = new System.Drawing.Point(708, 137);
+            this.btnConnect.Location = new System.Drawing.Point(708, 169);
             this.btnConnect.Name = "btnConnect";
             this.btnConnect.Size = new System.Drawing.Size(76, 33);
             this.btnConnect.TabIndex = 6;
@@ -138,7 +142,7 @@
             // label4
             // 
             this.label4.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label4.Location = new System.Drawing.Point(19, 587);
+            this.label4.Location = new System.Drawing.Point(19, 619);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(150, 25);
             this.label4.TabIndex = 8;
@@ -147,7 +151,7 @@
             // numCheckInterval
             // 
             this.numCheckInterval.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.numCheckInterval.Location = new System.Drawing.Point(184, 587);
+            this.numCheckInterval.Location = new System.Drawing.Point(184, 619);
             this.numCheckInterval.Maximum = new decimal(new int[] {
             3000,
             0,
@@ -170,7 +174,7 @@
             // label5
             // 
             this.label5.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label5.Location = new System.Drawing.Point(19, 626);
+            this.label5.Location = new System.Drawing.Point(19, 691);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(150, 25);
             this.label5.TabIndex = 10;
@@ -180,7 +184,7 @@
             // textLineToken
             // 
             this.textLineToken.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.textLineToken.Location = new System.Drawing.Point(184, 626);
+            this.textLineToken.Location = new System.Drawing.Point(184, 691);
             this.textLineToken.Name = "textLineToken";
             this.textLineToken.Size = new System.Drawing.Size(515, 33);
             this.textLineToken.TabIndex = 11;
@@ -190,7 +194,7 @@
             // 
             this.btnApply.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnApply.Enabled = false;
-            this.btnApply.Location = new System.Drawing.Point(184, 665);
+            this.btnApply.Location = new System.Drawing.Point(184, 730);
             this.btnApply.Name = "btnApply";
             this.btnApply.Size = new System.Drawing.Size(106, 33);
             this.btnApply.TabIndex = 12;
@@ -201,7 +205,7 @@
             // btnStop
             // 
             this.btnStop.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnStop.Location = new System.Drawing.Point(408, 665);
+            this.btnStop.Location = new System.Drawing.Point(408, 730);
             this.btnStop.Name = "btnStop";
             this.btnStop.Size = new System.Drawing.Size(123, 33);
             this.btnStop.TabIndex = 13;
@@ -212,7 +216,7 @@
             // textDatabase
             // 
             this.textDatabase.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.textDatabase.Location = new System.Drawing.Point(184, 98);
+            this.textDatabase.Location = new System.Drawing.Point(184, 130);
             this.textDatabase.Name = "textDatabase";
             this.textDatabase.Size = new System.Drawing.Size(515, 33);
             this.textDatabase.TabIndex = 15;
@@ -220,7 +224,7 @@
             // label6
             // 
             this.label6.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label6.Location = new System.Drawing.Point(19, 98);
+            this.label6.Location = new System.Drawing.Point(19, 130);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(150, 25);
             this.label6.TabIndex = 14;
@@ -236,7 +240,7 @@
             // 
             this.btnTestLine.Anchor = System.Windows.Forms.AnchorStyles.Right;
             this.btnTestLine.Enabled = false;
-            this.btnTestLine.Location = new System.Drawing.Point(705, 626);
+            this.btnTestLine.Location = new System.Drawing.Point(705, 691);
             this.btnTestLine.Name = "btnTestLine";
             this.btnTestLine.Size = new System.Drawing.Size(76, 33);
             this.btnTestLine.TabIndex = 16;
@@ -249,7 +253,7 @@
             this.clbMonitorTypes.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.clbMonitorTypes.Enabled = false;
             this.clbMonitorTypes.FormattingEnabled = true;
-            this.clbMonitorTypes.Location = new System.Drawing.Point(184, 353);
+            this.clbMonitorTypes.Location = new System.Drawing.Point(184, 385);
             this.clbMonitorTypes.Name = "clbMonitorTypes";
             this.clbMonitorTypes.Size = new System.Drawing.Size(515, 228);
             this.clbMonitorTypes.TabIndex = 7;
@@ -257,7 +261,7 @@
             // btnTestMonitor
             // 
             this.btnTestMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnTestMonitor.Location = new System.Drawing.Point(296, 665);
+            this.btnTestMonitor.Location = new System.Drawing.Point(296, 730);
             this.btnTestMonitor.Name = "btnTestMonitor";
             this.btnTestMonitor.Size = new System.Drawing.Size(106, 33);
             this.btnTestMonitor.TabIndex = 17;
@@ -268,7 +272,7 @@
             // label7
             // 
             this.label7.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label7.Location = new System.Drawing.Point(19, 22);
+            this.label7.Location = new System.Drawing.Point(19, 54);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(150, 25);
             this.label7.TabIndex = 18;
@@ -277,7 +281,7 @@
             // textSystem
             // 
             this.textSystem.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.textSystem.Location = new System.Drawing.Point(187, 22);
+            this.textSystem.Location = new System.Drawing.Point(187, 54);
             this.textSystem.Name = "textSystem";
             this.textSystem.Size = new System.Drawing.Size(271, 33);
             this.textSystem.TabIndex = 19;
@@ -285,7 +289,7 @@
             // label8
             // 
             this.label8.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label8.Location = new System.Drawing.Point(19, 176);
+            this.label8.Location = new System.Drawing.Point(19, 208);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(150, 25);
             this.label8.TabIndex = 20;
@@ -296,7 +300,7 @@
             this.clbMonitors.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.clbMonitors.Enabled = false;
             this.clbMonitors.FormattingEnabled = true;
-            this.clbMonitors.Location = new System.Drawing.Point(184, 176);
+            this.clbMonitors.Location = new System.Drawing.Point(184, 208);
             this.clbMonitors.Name = "clbMonitors";
             this.clbMonitors.Size = new System.Drawing.Size(515, 172);
             this.clbMonitors.TabIndex = 21;
@@ -304,7 +308,7 @@
             // btnLoadConfig
             // 
             this.btnLoadConfig.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.btnLoadConfig.Location = new System.Drawing.Point(464, 22);
+            this.btnLoadConfig.Location = new System.Drawing.Point(464, 54);
             this.btnLoadConfig.Name = "btnLoadConfig";
             this.btnLoadConfig.Size = new System.Drawing.Size(106, 33);
             this.btnLoadConfig.TabIndex = 22;
@@ -315,7 +319,7 @@
             // btnSaveConfig
             // 
             this.btnSaveConfig.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.btnSaveConfig.Location = new System.Drawing.Point(576, 22);
+            this.btnSaveConfig.Location = new System.Drawing.Point(576, 54);
             this.btnSaveConfig.Name = "btnSaveConfig";
             this.btnSaveConfig.Size = new System.Drawing.Size(106, 33);
             this.btnSaveConfig.TabIndex = 23;
@@ -326,7 +330,7 @@
             // button1
             // 
             this.button1.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.button1.Location = new System.Drawing.Point(553, 61);
+            this.button1.Location = new System.Drawing.Point(553, 93);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(146, 33);
             this.button1.TabIndex = 24;
@@ -350,19 +354,65 @@
             // chkHourData
             // 
             this.chkHourData.AutoSize = true;
-            this.chkHourData.Location = new System.Drawing.Point(351, 592);
+            this.chkHourData.Location = new System.Drawing.Point(351, 624);
             this.chkHourData.Name = "chkHourData";
             this.chkHourData.Size = new System.Drawing.Size(124, 28);
             this.chkHourData.TabIndex = 25;
             this.chkHourData.Text = "檢查小時值";
             this.chkHourData.UseVisualStyleBackColor = true;
             // 
+            // btnExploreLogDir
+            // 
+            this.btnExploreLogDir.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnExploreLogDir.Location = new System.Drawing.Point(537, 730);
+            this.btnExploreLogDir.Name = "btnExploreLogDir";
+            this.btnExploreLogDir.Size = new System.Drawing.Size(145, 33);
+            this.btnExploreLogDir.TabIndex = 26;
+            this.btnExploreLogDir.Text = "紀錄檔查詢";
+            this.btnExploreLogDir.UseVisualStyleBackColor = true;
+            this.btnExploreLogDir.Click += new System.EventHandler(this.btnExploreLogDir_Click);
+            // 
+            // numLagAllowed
+            // 
+            this.numLagAllowed.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            this.numLagAllowed.Location = new System.Drawing.Point(184, 654);
+            this.numLagAllowed.Maximum = new decimal(new int[] {
+            3000,
+            0,
+            0,
+            0});
+            this.numLagAllowed.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numLagAllowed.Name = "numLagAllowed";
+            this.numLagAllowed.Size = new System.Drawing.Size(161, 33);
+            this.numLagAllowed.TabIndex = 28;
+            this.numLagAllowed.Value = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            // 
+            // label9
+            // 
+            this.label9.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.label9.Location = new System.Drawing.Point(19, 654);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(150, 25);
+            this.label9.TabIndex = 27;
+            this.label9.Text = "允許時間差(分):";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.ClientSize = new System.Drawing.Size(794, 710);
+            this.ClientSize = new System.Drawing.Size(794, 775);
+            this.Controls.Add(this.numLagAllowed);
+            this.Controls.Add(this.label9);
+            this.Controls.Add(this.btnExploreLogDir);
             this.Controls.Add(this.chkHourData);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.btnSaveConfig);
@@ -397,6 +447,7 @@
             this.Text = "資料庫Watchdog";
             this.Load += new System.EventHandler(this.MainForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.numCheckInterval)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numLagAllowed)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -434,5 +485,8 @@
         private System.Windows.Forms.SaveFileDialog saveConfigDlg;
         private System.Windows.Forms.OpenFileDialog openConfigDlg;
         private System.Windows.Forms.CheckBox chkHourData;
+        private System.Windows.Forms.Button btnExploreLogDir;
+        private System.Windows.Forms.NumericUpDown numLagAllowed;
+        private System.Windows.Forms.Label label9;
     }
 }

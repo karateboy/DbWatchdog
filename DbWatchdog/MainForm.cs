@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -8,6 +9,7 @@ using System.Windows.Forms;
 using DbWatchdog.Model;
 using RestSharp;
 using Serilog;
+using Serilog.Core;
 using Timer = System.Windows.Forms.Timer;
 
 namespace DbWatchdog
@@ -16,6 +18,7 @@ namespace DbWatchdog
     {
         private WatchdogConfig _config = new();
         private string _configPath = "config.json";
+        protected ILogger Logger = Log.ForContext<MainForm>();
 
         public MainForm()
         {
@@ -63,6 +66,7 @@ namespace DbWatchdog
             _config.DbName = textDatabase.Text;
             _config.ConnectionString = txtDbConnectionStr.Text;
             _config.CheckInterval = (int)numCheckInterval.Value;
+            _config.LagAllowed = (int)numLagAllowed.Value;
             _config.LineNotifyToken = textLineToken.Text;
             _config.Monitors = clbMonitors.CheckedItems.Cast<IMonitor>().Select(m => m.Id).ToList();
             _config.MonitorTypes = clbMonitorTypes.CheckedItems.Cast<IMonitorType>().Select(mt => mt.Id).ToList();
@@ -117,6 +121,7 @@ namespace DbWatchdog
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "InitMonitors() failed");
                 MessageBox.Show(ex.Message);
             }
         }
@@ -154,6 +159,7 @@ namespace DbWatchdog
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "InitMonitorTypes() failed");
                 MessageBox.Show(ex.Message);
             }
         }
@@ -187,12 +193,20 @@ namespace DbWatchdog
 
                    var response = await client.PostAsync(request);
                 */
-                MessageBox.Show(resp ? "訊息已送出!" : "訊息送出失敗!");
+                var msg = resp ? "Line 送出訊息成功" : "Line 送出訊息失敗!";
+                if (resp)
+                    Log.Information(msg);
+                else
+                    Log.Error(msg);
+
+                MessageBox.Show(msg);
                 if (resp) _config.LineNotifyToken = textLineToken.Text;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                var msg = "測試LINE通報發生錯誤";
+                Log.Error(ex, msg);
+                MessageBox.Show(msg);
             }
         }
 
@@ -231,6 +245,7 @@ namespace DbWatchdog
 
 
             numCheckInterval.Value = _config.CheckInterval;
+            numLagAllowed.Value = _config.LagAllowed;
             chkHourData.Checked = _config.CheckHourData;
             await InitMonitors();
             await InitMonitorTypes();
@@ -292,7 +307,7 @@ namespace DbWatchdog
                 _checkTimer = null;
             }
 
-            Log.Information("Start timer with {Interval} min interval", numCheckInterval.Value);
+            Log.Information("設定檢查計時器, 間隔{Interval} 分", numCheckInterval.Value);
             _checkTimer = new Timer();
             _checkTimer.Interval = (int)numCheckInterval.Value * 1000 * 60;
             _checkTimer.Tick += async (sender, args) => { await CheckDatabase(); };
@@ -312,8 +327,11 @@ namespace DbWatchdog
             return response.StatusCode == HttpStatusCode.OK;
         }
 
-        private async Task<bool> CheckDatabase()
+        private async Task<(bool, string)> CheckDatabase()
         {
+            bool hasIssues = false;
+            string issueMsg = string.Empty;
+
             try
             {
                 IDb db = btnMongo.Checked
@@ -321,14 +339,24 @@ namespace DbWatchdog
                     : new SqlDb(txtDbConnectionStr.Text);
                 var monitors = await db.GetMonitors();
                 var monitorMap = monitors.ToDictionary(m => m.Id);
+                Log.Information("開始檢查資料庫資料");
+                
                 foreach (var monitorId in _config.Monitors)
                 {
+                    Log.Information("檢查測站 {MonitorId}", monitorId);
                     var data = await db.GetLatestRecord(_config.CheckHourData ? "hour_data" : "min_data", monitorId, _config.MonitorTypes);
-                    if (monitorMap.TryGetValue(monitorId, out var monitor))
+                    if (!monitorMap.TryGetValue(monitorId, out var monitor)) continue;
+
+                    var ret = await CheckData(monitor, data);
+                    if (!ret.Item1)
                     {
-                        await CheckData(monitor, data);
+                        hasIssues = true;
+                        issueMsg += ret.Item2 +'\n';
+                        await NotifyLine(ret.Item2);
                     }
                 }
+                Log.Information("資料庫檢查完畢");
+                return (!hasIssues, issueMsg);
             }
             catch (Exception ex)
             {
@@ -336,33 +364,41 @@ namespace DbWatchdog
                 throw;
             }
 
-            return true;
-
-            async Task<bool> CheckData(IMonitor monitor, SqlDb.IDataRecord data)
+            Task<(bool, string)> CheckData(IMonitor monitor, SqlDb.IDataRecord data)
             {
+                var alertMsg = string.Empty;
                 var dataType = _config.CheckHourData ? "小時" : "分鐘";
                 if (data.Time == DateTime.MinValue)
                 {
-                    Log.Information("No data found");
-                    await NotifyLine($"{_config.System} - {monitor.Name}找不到{dataType}資料");
-                    return false;
+                    var msg = $"{_config.System} - {monitor.Name}全測項{dataType}資料找不到!";
+                    Log.Information(msg);
+                    alertMsg += msg;
+                    return Task.FromResult((false, alertMsg));
                 }
 
 
-                if (data.Time < DateTime.Now.AddMinutes(-(int)numCheckInterval.Value))
+                if (data.Time < DateTime.Now.AddMinutes(-(int) numLagAllowed.Value))
                 {
-                    Log.Information("Data is too old");
-                    await NotifyLine($"{_config.System} - {monitor.Name}全測項{dataType}資料未更新! 最新資料時間{data.Time:G}");
-                    return false;
+                    var msg = $"{_config.System} - {monitor.Name}全測項{dataType}資料未更新! 最新資料時間{data.Time:G}";
+                    Log.Information(msg);
+                    alertMsg += msg;
+                    return Task.FromResult((false, alertMsg));
                 }
 
+                var noData = false;
+                alertMsg = $"{_config.System} - {monitor.Name}未收到:";
                 foreach (var mt in _config.MonitorTypes.Where(mt => !data.Values.ContainsKey(mt)))
                 {
-                    Log.Information("{Mt}: N/A", mt);
-                    await NotifyLine($"{_config.System} - {monitor.Name}未收到{mt}測項資料");
+                    var msg = $"{_config.System} - {monitor.Name}未收到{mt}測項資料";
+                    Log.Information(msg);
+                    alertMsg += $"{mt},";
+                    noData = true;
                 }
 
-                return true;
+                if (!noData) return Task.FromResult((true, string.Empty));
+
+                alertMsg = alertMsg.TrimEnd(',');
+                return Task.FromResult((false, alertMsg));
             }
         }
 
@@ -371,8 +407,15 @@ namespace DbWatchdog
             SaveConfig();
             try
             {
-                await CheckDatabase();
-                MessageBox.Show(@"測試完成");
+                var ret = await CheckDatabase();
+                if (!ret.Item1)
+                {
+                    MessageBox.Show("資料庫檢查發現異常:\n" + ret.Item2);
+                    return;
+                }
+
+                const string msg = "資料庫檢查完畢，無異常發生";
+                MessageBox.Show(msg);
             }
             catch (Exception ex)
             {
@@ -417,6 +460,12 @@ namespace DbWatchdog
         private void label5_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void btnExploreLogDir_Click(object sender, EventArgs e)
+        {
+            // opens the folder in explorer
+            Process.Start(@".\log");
         }
     }
 }

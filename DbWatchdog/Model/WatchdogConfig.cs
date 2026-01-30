@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ThirdParty.Json.LitJson;
 
 namespace DbWatchdog.Model
 {
@@ -14,6 +16,7 @@ namespace DbWatchdog.Model
         public string ConnectionString { get; set; } = "Server=localhost;Database=logger2;Trusted_Connection=True;";
         public string DbName { get; set; } = "logger2";
         public int CheckInterval { get; set; } = 10;
+        public int LagAllowed { get; set; } = 10;
         public List<string> Monitors { get; set; } = new List<string>();
         public List<string> MonitorTypes { get; set; } = new List<string>();
         public string LineNotifyToken { get; set; } = "";

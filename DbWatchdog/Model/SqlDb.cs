@@ -203,7 +203,7 @@ namespace DbWatchdog.Model
                     Where [monitor] = '{monitor}'
                     Order by [time] desc";
 
-            Log.Information($"GetLatestRecord: {sql}");
+            Log.Debug($"GetLatestRecord: {sql}");
             var reader = await connection.ExecuteReaderAsync(sql);
             var result = new Dictionary<string, double>();
             if (!await reader.ReadAsync())
