@@ -209,7 +209,7 @@
             this.btnStop.Name = "btnStop";
             this.btnStop.Size = new System.Drawing.Size(123, 33);
             this.btnStop.TabIndex = 13;
-            this.btnStop.Text = "結束";
+            this.btnStop.Text = "停止警報";
             this.btnStop.UseVisualStyleBackColor = true;
             this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
             // 
@@ -368,7 +368,7 @@
             this.btnExploreLogDir.Name = "btnExploreLogDir";
             this.btnExploreLogDir.Size = new System.Drawing.Size(145, 33);
             this.btnExploreLogDir.TabIndex = 26;
-            this.btnExploreLogDir.Text = "紀錄檔查詢";
+            this.btnExploreLogDir.Text = "紀錄檔";
             this.btnExploreLogDir.UseVisualStyleBackColor = true;
             this.btnExploreLogDir.Click += new System.EventHandler(this.btnExploreLogDir_Click);
             // 

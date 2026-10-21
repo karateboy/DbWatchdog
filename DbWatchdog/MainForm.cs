@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Media;
 using System.Net;
 using System.Reflection;
 using System.Threading;
@@ -19,6 +20,8 @@ namespace DbWatchdog
         private WatchdogConfig _config = new();
         private string _configPath = "config.json";
         protected ILogger Logger = Log.ForContext<MainForm>();
+        private Timer? _alarmTimer;
+        private bool _isAlarmActive;
 
         public MainForm()
         {
@@ -27,7 +30,35 @@ namespace DbWatchdog
 
         private void btnStop_Click(object sender, EventArgs e)
         {
-            Close();
+            StopAlarm();
+        }
+
+        private void StartAlarm()
+        {
+            if (_isAlarmActive) return;
+
+            _isAlarmActive = true;
+            _alarmTimer ??= new Timer
+            {
+                Interval = 1000
+            };
+
+            _alarmTimer.Tick -= AlarmTimerOnTick;
+            _alarmTimer.Tick += AlarmTimerOnTick;
+            _alarmTimer.Start();
+            SystemSounds.Hand.Play();
+        }
+
+        private void StopAlarm()
+        {
+            _isAlarmActive = false;
+            _alarmTimer?.Stop();
+        }
+
+        private void AlarmTimerOnTick(object sender, EventArgs e)
+        {
+            if (!_isAlarmActive) return;
+            SystemSounds.Hand.Play();
         }
 
         private void btnMongo_CheckedChanged(object sender, EventArgs e)
@@ -352,6 +383,7 @@ namespace DbWatchdog
                     {
                         hasIssues = true;
                         issueMsg += ret.Item2 +'\n';
+                        StartAlarm();
                         await NotifyLine(ret.Item2);
                     }
                 }
