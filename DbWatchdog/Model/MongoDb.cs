@@ -66,6 +66,13 @@ namespace DbWatchdog.Model
             public List<MtRecord> mtDataList;
         }
 
+        [BsonIgnoreExtraElements]
+        class Alarm
+        {
+            public DateTime time;
+            public int level;
+        }
+
         public MongoDb(string connectionString, string database)
         {
             this._connectionString = connectionString;
@@ -125,6 +132,18 @@ namespace DbWatchdog.Model
                     Values = result
                 };
             }
+        }
+
+        public async Task<long> GetAlarmCount(DateTime after)
+        {
+            var collection = _client.GetDatabase(_database).GetCollection<Alarm>("alarms");
+            var filter1 = Builders<Alarm>.Filter
+                .Gte(r => r.time, after);
+            var filter2 = Builders<Alarm>.Filter
+                .Gte(r => r.level, 3);
+            var filter = Builders<Alarm>.Filter.And(filter1, filter2);
+
+            return await collection.CountDocumentsAsync(filter);
         }
     }
 }

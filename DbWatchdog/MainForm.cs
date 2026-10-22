@@ -388,6 +388,14 @@ namespace DbWatchdog
                     }
                 }
                 Log.Information("資料庫檢查完畢");
+                // Check alarm count since the last check interval
+                var alarmCount = await db.GetAlarmCount(DateTime.Now.AddMinutes(-(int)numCheckInterval.Value));
+                if(alarmCount > 0)
+                {
+                    hasIssues = true;
+                    issueMsg += $"在過去 {(int)numCheckInterval.Value} 分鐘內發生了 {alarmCount} 次警報。\n";
+                }
+
                 return (!hasIssues, issueMsg);
             }
             catch (Exception ex)

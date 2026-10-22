@@ -1,13 +1,15 @@
-﻿using System;
+﻿using Dapper;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
-using Dapper;
-using Serilog;
+using System.Web.UI.WebControls;
 
 namespace DbWatchdog.Model
 {
@@ -78,6 +80,8 @@ namespace DbWatchdog.Model
         Task<IEnumerable<IMonitor>> GetMonitors();
         Task<IEnumerable<IMonitorType>> GetMonitorTypes();
         Task<SqlDb.IDataRecord> GetLatestRecord(string table, string monitor, List<string> mtList);
+
+        Task<long> GetAlarmCount(DateTime after);
     }
 
     class SqlDb(string connectionString) : IDb
@@ -193,7 +197,19 @@ namespace DbWatchdog.Model
             
             return await GetNewLatestRecord(table, monitor, mtList);
         }
-        
+
+        public async Task<long> GetAlarmCount(DateTime after)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var sql =
+                $@"SELECT Count(*)
+                   FROM [dbo].[alarms]
+                   Where time >= @after and level >= 3";
+
+            Log.Debug($"GetAlarmCount: {sql}");
+            return await connection.ExecuteScalarAsync<long>(sql, new { after });
+        }
+
         private async Task<IDataRecord> GetNewLatestRecord(string table, string monitor, List<string> mtList)
         {
             using var connection = new SqlConnection(connectionString);
