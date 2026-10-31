@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Media;
 using System.Net;
@@ -98,10 +99,11 @@ namespace DbWatchdog
             _config.ConnectionString = txtDbConnectionStr.Text;
             _config.CheckInterval = (int)numCheckInterval.Value;
             _config.LagAllowed = (int)numLagAllowed.Value;
+            _config.HourLagAllowed = (int)numHourLagAllowed.Value;
             _config.LineNotifyToken = textLineToken.Text;
             _config.Monitors = clbMonitors.CheckedItems.Cast<IMonitor>().Select(m => m.Id).ToList();
             _config.MonitorTypes = clbMonitorTypes.CheckedItems.Cast<IMonitorType>().Select(mt => mt.Id).ToList();
-            _config.CheckHourData = chkHourData.Checked;
+            _config.HourMonitorTypes = clbHourMonitorTypes.CheckedItems.Cast<IMonitorType>().Select(mt => mt.Id).ToList();
             _config.SaveToFile(_configPath);
         }
 
@@ -168,9 +170,11 @@ namespace DbWatchdog
                 var monitorTypes = enumMonitorTypes.ToList();
                 btnApply.Enabled = true;
                 clbMonitorTypes.Items.Clear();
+                clbHourMonitorTypes.Items.Clear();
                 foreach (var monitorType in monitorTypes)
                 {
                     clbMonitorTypes.Items.Add(monitorType);
+                    clbHourMonitorTypes.Items.Add(monitorType);
                 }
 
                 clbMonitorTypes.Enabled = true;
@@ -185,6 +189,20 @@ namespace DbWatchdog
                     if (filteredSelectedMonitorTypes.Contains(monitorType.Id))
                     {
                         clbMonitorTypes.SetItemChecked(i, true);
+                    }
+                }
+
+                clbHourMonitorTypes.Enabled = true;
+                var hourMonitorTypeIds = monitorTypes.Select(mt => mt.Id).ToList();
+                var filteredSelectedHourMonitorTypes =
+                    _config.HourMonitorTypes.Where(mt => hourMonitorTypeIds.Contains(mt)).ToList();
+
+                for (int i = 0; i < clbHourMonitorTypes.Items.Count; i++)
+                {
+                    var monitorType = (IMonitorType)clbHourMonitorTypes.Items[i];
+                    if (filteredSelectedHourMonitorTypes.Contains(monitorType.Id))
+                    {
+                        clbHourMonitorTypes.SetItemChecked(i, true);
                     }
                 }
             }
@@ -277,7 +295,7 @@ namespace DbWatchdog
 
             numCheckInterval.Value = _config.CheckInterval;
             numLagAllowed.Value = _config.LagAllowed;
-            chkHourData.Checked = _config.CheckHourData;
+            numHourLagAllowed.Value = _config.HourLagAllowed;
             await InitMonitors();
             await InitMonitorTypes();
         }
@@ -372,13 +390,14 @@ namespace DbWatchdog
                 var monitorMap = monitors.ToDictionary(m => m.Id);
                 Log.Information("開始檢查資料庫資料");
                 
+                // 檢查分鐘值
                 foreach (var monitorId in _config.Monitors)
                 {
                     Log.Information("檢查測站 {MonitorId}", monitorId);
-                    var data = await db.GetLatestRecord(_config.CheckHourData ? "hour_data" : "min_data", monitorId, _config.MonitorTypes);
+                    var data = await db.GetLatestRecord("min_data", monitorId, _config.MonitorTypes);
                     if (!monitorMap.TryGetValue(monitorId, out var monitor)) continue;
 
-                    var ret = await CheckData(monitor, data);
+                    var ret = await CheckData(monitor, data, false);
                     if (!ret.Item1)
                     {
                         hasIssues = true;
@@ -387,13 +406,29 @@ namespace DbWatchdog
                         await NotifyLine(ret.Item2);
                     }
                 }
+                // 檢查小時值
+                foreach (var monitorId in _config.Monitors)
+                {
+                    Log.Information("檢查測站 {MonitorId}", monitorId);
+                    var data = await db.GetLatestRecord("hour_data", monitorId, _config.HourMonitorTypes);
+                    if (!monitorMap.TryGetValue(monitorId, out var monitor)) continue;
+
+                    var ret = await CheckData(monitor, data, true);
+                    if (!ret.Item1)
+                    {
+                        hasIssues = true;
+                        issueMsg += ret.Item2 + '\n';
+                        StartAlarm();
+                        await NotifyLine(ret.Item2);
+                    }
+                }
                 Log.Information("資料庫檢查完畢");
                 // Check alarm count since the last check interval
-                var alarmCount = await db.GetAlarmCount(DateTime.Now.AddMinutes(-(int)numCheckInterval.Value));
+                var alarmCount = await db.GetAlarmCount(DateTime.Now.AddMinutes(-(int)_config.CheckInterval));
                 if(alarmCount > 0)
                 {
                     hasIssues = true;
-                    issueMsg += $"在過去 {(int)numCheckInterval.Value} 分鐘內發生了 {alarmCount} 次警報。\n";
+                    issueMsg += $"在過去 {(int)_config.CheckInterval} 分鐘內發生了 {alarmCount} 次警報。\n";
                 }
 
                 return (!hasIssues, issueMsg);
@@ -404,10 +439,10 @@ namespace DbWatchdog
                 throw;
             }
 
-            Task<(bool, string)> CheckData(IMonitor monitor, SqlDb.IDataRecord data)
+            Task<(bool, string)> CheckData(IMonitor monitor, SqlDb.IDataRecord data, bool isHourData)
             {
                 var alertMsg = string.Empty;
-                var dataType = _config.CheckHourData ? "小時" : "分鐘";
+                var dataType = isHourData ? "小時" : "分鐘";
                 if (data.Time == DateTime.MinValue)
                 {
                     var msg = $"{_config.System} - {monitor.Name}全測項{dataType}資料找不到!";
@@ -416,8 +451,11 @@ namespace DbWatchdog
                     return Task.FromResult((false, alertMsg));
                 }
 
+                var lag = -(int)_config.LagAllowed;
+                if(isHourData)
+                    lag = -(int)_config.HourLagAllowed;
 
-                if (data.Time < DateTime.Now.AddMinutes(-(int) numLagAllowed.Value))
+                if (data.Time < DateTime.Now.AddMinutes(lag))
                 {
                     var msg = $"{_config.System} - {monitor.Name}全測項{dataType}資料未更新! 最新資料時間{data.Time:G}";
                     Log.Information(msg);
@@ -427,7 +465,8 @@ namespace DbWatchdog
 
                 var noData = false;
                 alertMsg = $"{_config.System} - {monitor.Name}未收到:";
-                foreach (var mt in _config.MonitorTypes.Where(mt => !data.Values.ContainsKey(mt)))
+                var monitorTypes = isHourData ? _config.HourMonitorTypes : _config.MonitorTypes;
+                foreach (var mt in monitorTypes.Where(mt => !data.Values.ContainsKey(mt)))
                 {
                     var msg = $"{_config.System} - {monitor.Name}未收到{mt}測項資料";
                     Log.Information(msg);
@@ -506,6 +545,47 @@ namespace DbWatchdog
         {
             // opens the folder in explorer
             Process.Start(@".\log");
+        }
+
+        private void tabMain_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (tabMain.SelectedTab != tabMonitorLog) return;
+            LoadLatestLogFile();
+        }
+
+        private void LoadLatestLogFile()
+        {
+            try
+            {
+                var logDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
+                if (!Directory.Exists(logDir))
+                {
+                    textLogContent.Text = $"找不到記錄目錄: {logDir}";
+                    return;
+                }
+
+                var latestLog = new DirectoryInfo(logDir)
+                    .GetFiles("*.log")
+                    .OrderByDescending(f => f.LastWriteTime)
+                    .FirstOrDefault();
+
+                if (latestLog is null)
+                {
+                    textLogContent.Text = $"{logDir} 目錄下沒有 log 檔案。";
+                    return;
+                }
+
+                using (var fs = new FileStream(latestLog.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var sr = new StreamReader(fs))
+                {
+                    textLogContent.Text = sr.ReadToEnd();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "LoadLatestLogFile() failed");
+                textLogContent.Text = ex.Message;
+            }
         }
     }
 }

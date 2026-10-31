@@ -19,13 +19,15 @@ namespace DbWatchdog.Model
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int LagAllowed { get; set; } = 10;
 
+        public int HourLagAllowed { get; set; } = 10;
+
         public List<string> Monitors { get; set; } = new List<string>();
 
         public List<string> MonitorTypes { get; set; } = new List<string>();
 
-        public string LineNotifyToken { get; set; } = "";
+        public List<string> HourMonitorTypes { get; set; } = new List<string>();
 
-        public bool CheckHourData { get; set; } = false;
+        public string LineNotifyToken { get; set; } = "";
 
 
         public static WatchdogConfig? FromFile(string path)
