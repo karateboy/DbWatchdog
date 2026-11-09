@@ -428,9 +428,11 @@ namespace DbWatchdog
                 if(alarmCount > 0)
                 {
                     hasIssues = true;
-                    issueMsg += $"在過去 {(int)_config.CheckInterval} 分鐘內發生了 {alarmCount} 次警報。\n";
+                    var message = $"在過去 {(int)_config.CheckInterval} 分鐘內發生了 {alarmCount} 次警報。\n";
+                    Log.Information(message);
+                    issueMsg += message;
                     StartAlarm();
-                    await NotifyLine(issueMsg);
+                    await NotifyLine(message);
                 }
 
                 return (!hasIssues, issueMsg);
